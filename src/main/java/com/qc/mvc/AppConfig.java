@@ -2,6 +2,7 @@ package com.qc.mvc;
 
 import com.mitchellbosecke.pebble.PebbleEngine;
 import com.mitchellbosecke.pebble.extension.AbstractExtension;
+import com.mitchellbosecke.pebble.extension.Extension;
 import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.loader.ServletLoader;
 import com.mitchellbosecke.pebble.spring.extension.SpringExtension;
@@ -41,7 +42,6 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 import java.io.File;
-import java.security.cert.Extension;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,8 +100,6 @@ public class AppConfig {
     @Bean
     WebMvcConfigurer createWebMvcConfigurer(@Autowired HandlerInterceptor[] interceptors){
 
-
-
         return new WebMvcConfigurer() {
 
             /**
@@ -136,12 +134,18 @@ public class AppConfig {
     }
 
     //-----i18n-----------------------
+    /** 这部分主要是考察对顺序的理解，
+     * 是从controller=> interceptor =>view Extension
+     * 这样的顺序执行的，message搭配着locale参数做的语言切换
+     * 目前已经基本实现了，默认是否浏览器语言还要验证
+     * controller切换时更改为en_US去生成locale，然后走的后续流程
+     * */
     @Bean
-    LocaleResolver createLocaleResolver(){
+    LocaleResolver createLocaleResolver() {
         var clr = new CookieLocaleResolver();
         clr.setDefaultLocale(Locale.ENGLISH);
         clr.setDefaultTimeZone(TimeZone.getDefault());
-        return  clr;
+        return clr;
     }
 
     //然后写messageSource
@@ -172,8 +176,8 @@ public class AppConfig {
         return  viewResolver;
     }
 
-
-    private AbstractExtension createExtension(MessageSource messageSource) {
+    //这个方法没咋起效果
+    private Extension createExtension(MessageSource messageSource) {
         return new AbstractExtension() {
             @Override
             public Map<String, Function> getFunctions() {
@@ -195,10 +199,16 @@ public class AppConfig {
                          * */
                         //第一个参数拿到key
                         String key = (String) args.get("0");
+                        System.out.println("=========="+key+"============");
                         //第二个参数，拿到arguments
                         List<Object> arguments = this.extractArguments(args);
+                        System.out.println("-------"+arguments + "--------");
+
                         //第三个参数拿到Locale
                         Locale locale = (Locale) context.getVariable("__locale__");
+                        //一开始等于en,后来等于en_US，会不会是这个造成的问题，目前来看一开始默认的是浏览器默认语言
+
+                        System.out.println("$$$$$$$$$" + locale + "$$$$$$$$$");
                         //返回messageSource，toArray将ArrayList转化为数组
                         return  messageSource.getMessage(key,arguments.toArray(),"???" + key + "???", locale);
 

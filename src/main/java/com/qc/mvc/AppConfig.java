@@ -1,9 +1,13 @@
 package com.qc.mvc;
 
 import com.mitchellbosecke.pebble.PebbleEngine;
+import com.mitchellbosecke.pebble.extension.AbstractExtension;
+import com.mitchellbosecke.pebble.extension.Function;
 import com.mitchellbosecke.pebble.loader.ServletLoader;
 import com.mitchellbosecke.pebble.spring.extension.SpringExtension;
 import com.mitchellbosecke.pebble.spring.servlet.PebbleViewResolver;
+import com.mitchellbosecke.pebble.template.EvaluationContext;
+import com.mitchellbosecke.pebble.template.PebbleTemplate;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.catalina.Context;
@@ -12,11 +16,14 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.webresources.DirResourceSet;
 import org.apache.catalina.webresources.StandardRoot;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -34,8 +41,12 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 import java.io.File;
+import java.security.cert.Extension;
 import java.sql.Time;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -134,24 +145,25 @@ public class AppConfig {
     }
 
     //然后写messageSource
-    
-
-
-
-
-
-
-
+    @Bean("i18n") /** i18n，区分于其他messageSource */
+    MessageSource createMessageSource(){
+        var messageSource = new ResourceBundleMessageSource();
+         //指定文件名是utf-8编码
+         messageSource.setDefaultEncoding("UTF-8");
+         //指定主文件名
+         messageSource.setBasename("messages");
+         return  messageSource;
+    }
 
 
     // -- pebble view configuration -------------------------------------------
     /** Spring MVC允许集成任何模板引擎，使用哪个模板引擎，就实例化一个对应的ViewResolver */
     @Bean
-    ViewResolver createViewResolver(@Autowired ServletContext servletContext){
+    ViewResolver createViewResolver(@Autowired ServletContext servletContext,@Autowired @Qualifier("i18n") MessageSource messageSource){
         PebbleEngine engine = new PebbleEngine.Builder().autoEscaping(true)
                 .cacheActive(false)
                 .loader(new ServletLoader(servletContext))
-                .extension(new SpringExtension())
+                .extension(createExtension(messageSource))
                 .build();
         PebbleViewResolver viewResolver = new PebbleViewResolver();
         viewResolver.setPrefix("/WEB-INF/templates/");
@@ -159,6 +171,55 @@ public class AppConfig {
         viewResolver.setPebbleEngine(engine);
         return  viewResolver;
     }
+
+
+    private AbstractExtension createExtension(MessageSource messageSource) {
+        return new AbstractExtension() {
+            @Override
+            public Map<String, Function> getFunctions() {
+                return Map.of("_", new Function() {
+                    @Override
+                    public List<String> getArgumentNames() {
+                        return null;
+                    }
+
+                    @Override
+                    public Object execute(Map<String, Object> args, PebbleTemplate self, EvaluationContext context,
+                                          int lineNumber) {
+                        /**
+                         * 注意我们改写的实体：
+                         * String text = messageSource.getMessage("signin", null, locale);
+                         * 第一个参数signin是我们在.properties文件中定义的key，
+                         * 第二个参数是Object[]数组作为格式化时传入的参数，
+                         * 最后一个参数就是获取的用户Locale实例。
+                         * */
+                        //第一个参数拿到key
+                        String key = (String) args.get("0");
+                        //第二个参数，拿到arguments
+                        List<Object> arguments = this.extractArguments(args);
+                        //第三个参数拿到Locale
+                        Locale locale = (Locale) context.getVariable("__locale__");
+                        //返回messageSource，toArray将ArrayList转化为数组
+                        return  messageSource.getMessage(key,arguments.toArray(),"???" + key + "???", locale);
+
+                    }
+
+                    private List<Object> extractArguments(Map<String, Object> args) {
+                        int i = 1;
+                        List<Object> arguments = new ArrayList<>();
+                        while (args.containsKey(String.valueOf(i))) {
+                            //valueOf返回原始值
+                            Object param = args.get(String.valueOf(i));
+                            arguments.add(param);
+                            i++;
+                        }
+                        return arguments;
+                    }
+                });
+            }
+        };
+    }
+
 
 
 
@@ -175,7 +236,7 @@ public class AppConfig {
     String jdbcPassword;
 
     @Bean
-    DataSource createDataSource() {
+    HikariDataSource createDataSource() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(jdbcUsername);

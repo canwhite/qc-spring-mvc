@@ -1,13 +1,24 @@
-<!DOCTYPE web-app PUBLIC
-        "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
-        "http://java.sun.com/dtd/web-app_2_3.dtd" >
+<!--<!DOCTYPE web-app PUBLIC-->
+<!--        "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"-->
+<!--        "http://java.sun.com/dtd/web-app_2_3.dtd" >-->
 
-<web-app>
+<!--因为用到了async，上边的不再用了，必须用新的支持Servlet 3.1规范的XSD声明，照抄即可-->
+<web-app
+        xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+        version="3.1">
     <display-name>Archetype Created Web Application</display-name>
+
+
+
     <!-- 一个filter需要一个mapping，指定映射范围，一个对应一个-->
+    <!-- 除了同步的接口，其他都加了async-supported-->
+    <!--用了框架的filter，当然也需要mapping-->
     <filter>
         <filter-name>encodingFilter</filter-name>
         <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+        <async-supported>true</async-supported>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>
@@ -18,12 +29,36 @@
         </init-param>
     </filter>
 
-    <!--如果自己定义-->
     <filter>
         <filter-name>authFilter</filter-name>
         <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <async-supported>true</async-supported>
     </filter>
 
+
+    <!--自己写了filter，当然也需要mapping-->
+    <filter>
+        <filter-name>async-filter</filter-name>
+        <filter-class>com.qc.mvc.web.AsyncFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+
+    <filter>
+        <filter-name>sync-filter</filter-name>
+        <filter-class>com.qc.mvc.web.SyncFilter</filter-class>
+    </filter>
+
+
+    <!-- filter mapping part-->
+    <filter-mapping>
+        <filter-name>sync-filter</filter-name>
+        <url-pattern>/api/version</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>async-filter</filter-name>
+        <url-pattern>/api/*</url-pattern>
+    </filter-mapping>
 
     <filter-mapping>
         <filter-name>encodingFilter</filter-name>
@@ -36,6 +71,7 @@
     </filter-mapping>
 
 
+    <!--servlet 也需要加一个async支持-->
 
     <servlet>
         <servlet-name>dispatcher</servlet-name>
@@ -49,6 +85,7 @@
             <param-value>com.qc.mvc.AppConfig</param-value>
         </init-param>
         <load-on-startup>0</load-on-startup>
+        <async-supported>true</async-supported>
     </servlet>
 
     <servlet-mapping>

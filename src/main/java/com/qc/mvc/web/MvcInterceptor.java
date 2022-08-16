@@ -36,7 +36,8 @@ public class MvcInterceptor implements HandlerInterceptor {
         if(modelAndView != null){
             //解析用户的locale，这里要用到我们注册的localeResolver
             Locale locale = localeResolver.resolveLocale(request);//从请求头获取相关数据
-            //放入Modal
+            System.out.println("##############interceptor############");
+            //这样会在请求头拼写
             modelAndView.addObject("__messageSource__",messageSource);
             modelAndView.addObject("__locale__",locale);
             //PS：这里改过之后前端也需要修改

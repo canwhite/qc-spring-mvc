@@ -33,17 +33,22 @@ public class LocaleController {
         Locale locale = null;
         ///locale/zh_CN
         int pos = lo.indexOf('_');
+        System.out.println("---------------"+lo+"-------------------");
+        //默认世纪上是看浏览器header放的是什么，然后后续就是我们的选择
         if (pos > 0) {
             //一个取得pos前，zh，一个取pos后是个cn，是个cn国家
             String lang = lo.substring(0, pos);
             String country = lo.substring(pos + 1);
             locale = new Locale(lang, country);
+
         } else {
+            //默认是中文
             locale = new Locale(lo);
         }
         // 设定此Locale:
         localeResolver.setLocale(request, response, locale);
-        logger.info("locale is set to {}.", locale);
+        System.out.println("locale is set to {}."+ locale);
+        System.out.println("---------------"+lo+"-------------------");
         // 刷新页面:
         String referer = request.getHeader("Referer");
         return "redirect:" + (referer == null ? "/" : referer);

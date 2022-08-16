@@ -5,7 +5,7 @@
 {% if user == null %}
 <h3>Welcome!</h3>
 <p><a href="/signin">Sign In</a> or <a href="/register">Register</a>
-    {% else %}
+{% else %}
 <h3>Welcome {{ user.name }}!</h3>
 {% endif %}
 

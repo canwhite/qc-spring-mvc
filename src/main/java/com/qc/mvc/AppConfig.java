@@ -27,6 +27,8 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -42,11 +44,11 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 import java.io.File;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TimeZone;
 
 /**
@@ -61,7 +63,9 @@ import java.util.TimeZone;
 @EnableTransactionManagement
 //classpath:target->classes即为classpath，任何我们需要在classpath前缀中获取的资源都必须在target->classes文件夹中找到
 //正常项目resource里的资源，会放在target->classes的根目录下
-@PropertySource("classpath:/jdbc.properties")
+//@PropertySource("classpath:/jdbc.properties")
+//下边是添加多个
+@PropertySource({ "classpath:/jdbc.properties", "classpath:/smtp.properties" })
 public class AppConfig {
 
     public static void main(String[] args) throws Exception {
@@ -132,6 +136,45 @@ public class AppConfig {
 
         };
     }
+
+    // -- javamail configuration ----------------------------------------------
+    @Bean
+    JavaMailSender createJavaMailSender(
+            // properties:
+            @Value("${smtp.host}") String host,
+            @Value("${smtp.port}") int port,
+            @Value("${smtp.auth}") String auth,
+            @Value("${smtp.username}") String username,
+            @Value("${smtp.password}") String password,
+            @Value("${smtp.debug:true}") String debug
+    ){
+        //处理一下这部分数据
+        var mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(host);
+        mailSender.setPort(port);
+
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
+
+        //设置一些属性
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", auth);
+        if (port == 587) {
+            props.put("mail.smtp.starttls.enable", "true");
+        }
+        if (port == 465) {
+            props.put("mail.smtp.socketFactory.port", "465");
+            props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        }
+        props.put("mail.debug", debug);
+
+        return  mailSender;
+
+    }
+
+
+
 
     //-----i18n-----------------------
     /** 这部分主要是考察对顺序的理解，

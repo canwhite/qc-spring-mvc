@@ -23,6 +23,7 @@
         <hikaricp.version>3.4.2</hikaricp.version>
         <hsqldb.version>2.5.0</hsqldb.version>
         <jackson.version>2.11.0</jackson.version>
+        <javamail.version>1.6.2</javamail.version>
 
 
     </properties>
@@ -38,6 +39,13 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <!-- for JavaMail 依赖 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
         </dependency>
 
@@ -90,6 +98,19 @@
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <version>${hsqldb.version}</version>
+        </dependency>
+
+        <!-- JavaMail 依赖 -->
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>javax.mail-api</artifactId>
+            <version>${javamail.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>javax.mail</artifactId>
+            <version>${javamail.version}</version>
         </dependency>
 
         <!-- 嵌入式Tomcat -->

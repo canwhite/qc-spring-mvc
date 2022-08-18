@@ -1,6 +1,7 @@
 package com.qc.mvc.web;
 
 import com.qc.mvc.entity.User;
+import com.qc.mvc.service.MailService;
 import com.qc.mvc.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,9 @@ public class UserController {
     @Autowired
     UserService userService;
 
+    @Autowired
+    MailService mailService;
+
 
     @GetMapping("/")
     public ModelAndView index(HttpSession session){
@@ -55,6 +59,16 @@ public class UserController {
         try {
             User user = userService.register(email,password,name);
             logger.info("user registered : {}",user.getEmail());
+
+            /** 在注册完之后新开一个线程去并行发邮件 */
+            //用lambda去简写run方法或者runnable接口实现，最后start就可以了
+            /** Authentication failed;  用的测试的，估计帐号密码认证失败了，这里注释一下*/
+            /**
+            new Thread(()->{
+                mailService.sendRegistrationMail(user);
+            }).start();
+             */
+
 
         }catch (RuntimeException e){
             return  new ModelAndView("register.html",Map.of("email",email,"error","Register failed"));

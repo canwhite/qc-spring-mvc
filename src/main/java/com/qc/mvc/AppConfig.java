@@ -148,15 +148,14 @@ public class AppConfig {
             @Value("${smtp.password}") String password,
             @Value("${smtp.debug:true}") String debug
     ){
-        //处理一下这部分数据
+        //创建mailSender实例
         var mailSender = new JavaMailSenderImpl();
         mailSender.setHost(host);
         mailSender.setPort(port);
-
         mailSender.setUsername(username);
         mailSender.setPassword(password);
 
-        //设置一些属性
+        //属性设置
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", auth);
@@ -168,9 +167,7 @@ public class AppConfig {
             props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
         }
         props.put("mail.debug", debug);
-
         return  mailSender;
-
     }
 
 

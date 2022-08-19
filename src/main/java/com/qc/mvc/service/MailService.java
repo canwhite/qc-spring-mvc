@@ -1,6 +1,9 @@
 package com.qc.mvc.service;
 
 import com.qc.mvc.entity.User;
+import com.qc.mvc.web.MailMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,6 +23,9 @@ import java.time.LocalDateTime;
  */
 @Component
 public class MailService {
+
+    final Logger logger = LoggerFactory.getLogger(getClass());
+
     //如果从发邮箱的角度来说，这个相当于发的源头
     @Value("${smtp.from}")
     String from;
@@ -30,12 +36,14 @@ public class MailService {
 
 
     //写发送服务
-    public  void  sendRegistrationMail(User user){
+    public  void  sendRegistrationMail(MailMessage mm){
+        /**MimeMessage是JavaMail的邮件对象，
+         *而MimeMessageHelper是Spring提供的用于简化设置MimeMessage的类
+         *通过我们的mailSender实例创建
+         */
+        /**
         try {
-            /**MimeMessage是JavaMail的邮件对象，
-             *而MimeMessageHelper是Spring提供的用于简化设置MimeMessage的类
-             *通过我们的mailSender实例创建
-            */
+
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage,"utf-8");
             //设置发邮件的源头
@@ -49,7 +57,6 @@ public class MailService {
             //发送邮件
             helper.setText(html);
 
-            /** 最后用mailSender发送message*/
             mailSender.send(mimeMessage);
 
 
@@ -58,6 +65,16 @@ public class MailService {
         }catch (MessagingException e){
             throw  new RuntimeException();
         }
+
+         */
+
+        logger.info("[send mail] sending registration mail to {}...", mm.email);
+        // TODO: simulate a long-time task:
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+        }
+        logger.info("[send mail] registration mail was sent to {}.", mm.email);
 
     }
 

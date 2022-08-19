@@ -2,6 +2,7 @@ package com.qc.mvc.web;
 
 import com.qc.mvc.entity.User;
 import com.qc.mvc.service.MailService;
+import com.qc.mvc.service.MessagingService;
 import com.qc.mvc.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,9 @@ public class UserController {
 
     @Autowired
     MailService mailService;
+
+    @Autowired
+    MessagingService messagingService;
 
 
     @GetMapping("/")
@@ -69,6 +73,11 @@ public class UserController {
             }).start();
              */
 
+            try {
+                messagingService.sendMailMessage(MailMessage.registration(user.getEmail(), user.getName()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
         }catch (RuntimeException e){
             return  new ModelAndView("register.html",Map.of("email",email,"error","Register failed"));

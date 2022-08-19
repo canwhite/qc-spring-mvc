@@ -1,5 +1,7 @@
 package com.qc.mvc;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mitchellbosecke.pebble.PebbleEngine;
 import com.mitchellbosecke.pebble.extension.AbstractExtension;
 import com.mitchellbosecke.pebble.extension.Extension;
@@ -11,11 +13,14 @@ import com.mitchellbosecke.pebble.template.EvaluationContext;
 import com.mitchellbosecke.pebble.template.PebbleTemplate;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.activemq.artemis.jms.client.ActiveMQJMSConnectionFactory;
 import org.apache.catalina.Context;
 import org.apache.catalina.WebResourceRoot;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.webresources.DirResourceSet;
 import org.apache.catalina.webresources.StandardRoot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +32,10 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -41,15 +50,18 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 
+import javax.jms.ConnectionFactory;
 import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 import java.io.File;
+import java.io.ObjectInput;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
+
 
 /**
  * 功能描述: app config
@@ -59,14 +71,17 @@ import java.util.TimeZone;
  */
 @Configuration
 @ComponentScan
+@EnableJms
 @EnableWebMvc /** 启用spring MVC*/
 @EnableTransactionManagement
 //classpath:target->classes即为classpath，任何我们需要在classpath前缀中获取的资源都必须在target->classes文件夹中找到
 //正常项目resource里的资源，会放在target->classes的根目录下
 //@PropertySource("classpath:/jdbc.properties")
 //下边是添加多个
-@PropertySource({ "classpath:/jdbc.properties", "classpath:/smtp.properties" })
+@PropertySource({ "classpath:/jdbc.properties", "classpath:/smtp.properties","classpath:/jms.properties"  })
 public class AppConfig {
+
+    final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static void main(String[] args) throws Exception {
 
@@ -170,7 +185,43 @@ public class AppConfig {
         return  mailSender;
     }
 
+    // -- jms configuration ----------------------------------------------
+    //创建jsm的dataSource
+    @Bean
+    //@Value冒号后边可以加默认值
+    ConnectionFactory createJMSConnectionFactory(@Value("${jms.uri:tcp://localhost:61616}") String uri,
+                                                 @Value("${jms.username:admin}") String username, @Value("${jms.password:123456}") String password){
 
+        logger.info("create JMS connection factory for standalone activemq artemis server...");
+        return new ActiveMQJMSConnectionFactory(uri, username, password);
+    }
+
+
+
+
+    //然后创建模版模型
+    @Bean
+    //根据返回值名字去create不失为一个好办法
+    JmsTemplate createJmsTemplate(@Autowired ConnectionFactory connectionFactory){
+        return  new JmsTemplate(connectionFactory);
+    }
+
+    //设置一个带名字的listener factory
+    @Bean("jmsListenerContainerFactory")
+    DefaultJmsListenerContainerFactory createJmsListenerContainerFactory(@Autowired ConnectionFactory connectionFactory){
+        var factory = new  DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        return  factory;
+    }
+
+
+    //---jackson bean-----------------------------------------------------
+    @Bean
+    ObjectMapper createObjectMapper(){
+        var om = new ObjectMapper();
+        om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        return  om;
+    }
 
 
     //-----i18n-----------------------

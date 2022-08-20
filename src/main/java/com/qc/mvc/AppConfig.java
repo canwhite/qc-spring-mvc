@@ -38,6 +38,7 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -74,17 +75,17 @@ import java.util.TimeZone;
 @EnableJms
 @EnableWebMvc /** 启用spring MVC*/
 @EnableTransactionManagement
+@EnableScheduling
 //classpath:target->classes即为classpath，任何我们需要在classpath前缀中获取的资源都必须在target->classes文件夹中找到
 //正常项目resource里的资源，会放在target->classes的根目录下
 //@PropertySource("classpath:/jdbc.properties")
 //下边是添加多个
-@PropertySource({ "classpath:/jdbc.properties", "classpath:/smtp.properties","classpath:/jms.properties"  })
+@PropertySource({ "classpath:/jdbc.properties", "classpath:/smtp.properties","classpath:/jms.properties","classpath:/task.properties"  })
 public class AppConfig {
 
     final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static void main(String[] args) throws Exception {
-
 
         /**
          * 使用Spring MVC时，整个Web应用程序按如下顺序启动：

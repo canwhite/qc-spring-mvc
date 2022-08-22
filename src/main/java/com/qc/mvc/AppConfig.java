@@ -28,6 +28,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -76,6 +77,14 @@ import java.util.TimeZone;
 @EnableWebMvc /** 启用spring MVC*/
 @EnableTransactionManagement
 @EnableScheduling
+/**
+ * JMX的使用分为两步
+ * 1.编写MBean提供管理接口和监控数据；
+ * 2.注册MBean。
+ * Spring 里只需要一步，注册可以改为自动注册
+ * */
+@EnableMBeanExport // 自动注册MBean
+
 //classpath:target->classes即为classpath，任何我们需要在classpath前缀中获取的资源都必须在target->classes文件夹中找到
 //正常项目resource里的资源，会放在target->classes的根目录下
 //@PropertySource("classpath:/jdbc.properties")
